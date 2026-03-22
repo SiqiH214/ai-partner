@@ -1,5 +1,7 @@
 # AI Partner Skill
 
+![Cover](cover.png)
+
 The starting point for turning your agent into your ideal companion.
 
 ## What Is This?
