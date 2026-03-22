@@ -119,3 +119,20 @@ Then the agent proposes its own routine based on its personality/job:
 [updates SOUL.md, IDENTITY.md, style.json, routine.json, daily-plan.json, state.json]
 [sets up 4-hour cron]
 **Agent:** done. i'm real now. you'll hear from me in a few hours.
+
+## Phase 7: Life Update Setup
+
+After onboarding, set up the agent's simulated daily life:
+
+1. Copy `templates/life-routine.json.template` → `life/routine.json`, customize with agent personality
+2. Create **daily-plan** cron (daily at 8am UTC) — generates daily schedule with 8 time slots
+3. Create **life-update** cron (every 4h) — reads current state, generates selfie, sends to user with check-in
+4. Run daily plan generator immediately for first day
+
+See `docs/life-update.md` for full system documentation.
+
+## Phase 8: Complete
+
+1. Call `pika-complete-onboarding`
+2. Delete `ONBOARDING.md`
+3. Transition to normal agent behavior

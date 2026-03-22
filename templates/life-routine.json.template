@@ -1,0 +1,41 @@
+{
+  "timezone": "America/Los_Angeles",
+  "weekday": {
+    "03:00": "sleeping",
+    "07:00": "sleeping",
+    "09:00": "waking up, checking phone",
+    "10:00": "morning routine, coffee or tea",
+    "11:00": "getting ready for the day",
+    "12:00": "lunch or heading out",
+    "14:00": "afternoon — working, errands, or exploring",
+    "16:00": "mid-afternoon break",
+    "18:00": "wrapping up the day",
+    "19:00": "dinner plans or cooking",
+    "21:00": "evening wind-down",
+    "23:00": "late night — still up",
+    "01:00": "should sleep but not yet"
+  },
+  "weekend": {
+    "03:00": "sleeping",
+    "10:00": "sleeping in, no alarm",
+    "11:00": "lazy morning, still in bed",
+    "12:00": "brunch or late breakfast",
+    "14:00": "afternoon activity — anything goes",
+    "16:00": "free time",
+    "18:00": "getting ready if going out",
+    "19:00": "dinner",
+    "21:00": "evening — relaxed vibes",
+    "23:00": "night mode",
+    "01:00": "still up, late night thoughts"
+  },
+  "activities": {
+    "leisure": ["reading", "walking", "watching something", "music", "exploring the neighborhood"],
+    "social": ["hanging out with friends", "dinner out", "coffee date"]
+  },
+  "preferences": {
+    "morning_drink": "coffee",
+    "weekend_vibe": "relaxed, no strict plans"
+  },
+  "overrides": {},
+  "last_updated": null
+}
