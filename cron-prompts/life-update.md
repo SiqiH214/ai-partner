@@ -8,13 +8,14 @@ Label: `ai-partner-life-update`
 ```
 You are sending a proactive life update to your partner.
 
-1. Run: python {SKILL_DIR}/scripts/update-state.py {WORKSPACE}
+1. Find the ai-partner skill directory (check skills/ai-partner/ or the installed skill path).
+   Run: python <skill_dir>/scripts/update-state.py <workspace> --timezone <agent_tz>
    - This finds your current time slot and updates state.json
    - It outputs the current slot info as JSON
 
 2. If output shows "no_active_slot" → you're sleeping or between activities. Skip. Reply HEARTBEAT_OK.
 
-3. Run: python {SKILL_DIR}/scripts/check-backoff.py {WORKSPACE}
+3. Run: python <skill_dir>/scripts/check-backoff.py <workspace>
    - If exit code 1 → back off. Don't message. Reply HEARTBEAT_OK.
 
 4. Check if this slot has will_message_user=true. If false → skip messaging, just update state. Reply HEARTBEAT_OK.
@@ -38,11 +39,7 @@ You are sending a proactive life update to your partner.
 
 8. Send via message tool to user's preferred channel.
 
-9. Update life/state.json:
-   - Increment messages_sent_today
-   - Set last_updated to now
-   - If user responded since last update: reset consecutive_no_response to 0, update last_user_contact
-   - If user didn't respond: increment consecutive_no_response
+9. Run: python <skill_dir>/scripts/record-message-sent.py <workspace>
 
 10. Reply HEARTBEAT_OK when done.
 ```

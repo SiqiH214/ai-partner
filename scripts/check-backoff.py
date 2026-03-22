@@ -7,12 +7,17 @@ Exit code 0 = ok to message, exit code 1 = back off.
 
 import json
 import sys
-from datetime import datetime, timezone
+import argparse
+from datetime import datetime, timezone, date
 from pathlib import Path
 
 
 def main():
-    workspace = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/data/.pikabot/workspace")
+    parser = argparse.ArgumentParser(description="Check back-off rules")
+    parser.add_argument("workspace", nargs="?", default="/data/.pikabot/workspace")
+    args = parser.parse_args()
+
+    workspace = Path(args.workspace)
     state_path = workspace / "life" / "state.json"
 
     if not state_path.exists():
@@ -21,6 +26,15 @@ def main():
 
     with open(state_path) as f:
         state = json.load(f)
+
+    # Auto-reset messages_sent_today at midnight
+    last_reset = state.get("last_daily_reset")
+    today_str = date.today().isoformat()
+    if last_reset != today_str:
+        state["messages_sent_today"] = 0
+        state["last_daily_reset"] = today_str
+        with open(state_path, "w") as f:
+            json.dump(state, f, indent=2)
 
     no_response = state.get("consecutive_no_response", 0)
     last_contact = state.get("last_user_contact")

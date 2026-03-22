@@ -2,7 +2,7 @@
 """Update state.json based on current time and daily plan.
 
 Usage:
-    python update-state.py [workspace_dir]
+    python update-state.py [workspace_dir] [--timezone IANA_TZ]
 
 Reads life/daily-plan.json, finds the current time slot, updates life/state.json.
 Returns the current slot info as JSON to stdout for the cron prompt to use.
@@ -10,15 +10,32 @@ Returns the current slot info as JSON to stdout for the cron prompt to use.
 
 import json
 import sys
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 
 def find_current_slot(plan: dict, now_hour: int, now_minute: int) -> dict | None:
     """Find which slot matches the current time."""
     now_minutes = now_hour * 60 + now_minute
 
-    for slot in plan.get("plan", []):
+    # Sort slots by start time to handle unsorted dicts
+    slots = plan.get("plan", [])
+    def slot_start_minutes(s):
+        time_range = s.get("time", "")
+        if "-" not in time_range:
+            return 0
+        start_str = time_range.split("-")[0]
+        h, m = int(start_str.split(":")[0]), int(start_str.split(":")[1])
+        return h * 60 + m
+    slots_sorted = sorted(slots, key=slot_start_minutes)
+
+    for slot in slots_sorted:
         time_range = slot.get("time", "")
         if "-" not in time_range:
             continue
@@ -38,8 +55,27 @@ def find_current_slot(plan: dict, now_hour: int, now_minute: int) -> dict | None
     return None
 
 
+def resolve_timezone(workspace: Path, cli_tz: str | None) -> ZoneInfo:
+    """Resolve timezone: CLI flag > config > UTC."""
+    if cli_tz:
+        return ZoneInfo(cli_tz)
+    config_path = workspace / "life" / "config.json"
+    if config_path.exists():
+        with open(config_path) as f:
+            cfg = json.load(f)
+        if cfg.get("timezone"):
+            return ZoneInfo(cfg["timezone"])
+    return ZoneInfo("UTC")
+
+
 def main():
-    workspace = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("/data/.pikabot/workspace")
+    parser = argparse.ArgumentParser(description="Update state from daily plan")
+    parser.add_argument("workspace", nargs="?", default="/data/.pikabot/workspace")
+    parser.add_argument("--timezone", type=str, default=None, help="IANA timezone")
+    args = parser.parse_args()
+
+    workspace = Path(args.workspace)
+    tz = resolve_timezone(workspace, args.timezone)
 
     plan_path = workspace / "life" / "daily-plan.json"
     state_path = workspace / "life" / "state.json"
@@ -56,12 +92,10 @@ def main():
         with open(state_path) as f:
             state = json.load(f)
 
-    now = datetime.now(timezone.utc)
-    # TODO: use agent's timezone from config instead of UTC
+    now = datetime.now(tz)
     slot = find_current_slot(plan, now.hour, now.minute)
 
     if slot is None:
-        # Between slots or no match — probably sleeping
         result = {
             "status": "no_active_slot",
             "current_activity": "sleeping or between activities",
@@ -84,7 +118,6 @@ def main():
     with open(state_path, "w") as f:
         json.dump(state, f, indent=2)
 
-    # Output current slot info for the cron
     result = {
         "status": "active",
         "slot": slot,

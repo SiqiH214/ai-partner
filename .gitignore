@@ -1,0 +1,9 @@
+# Runtime state — never commit
+life/state.json
+life/daily-plan.json
+life/config.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/

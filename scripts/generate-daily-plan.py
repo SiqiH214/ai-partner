@@ -15,6 +15,11 @@ from datetime import datetime, date
 from pathlib import Path
 import argparse
 
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
 # Spontaneous events that can replace or modify a slot
 SPONTANEOUS_EVENTS = [
     {"activity": "found a cute new cafe, had to stop in", "location": "new cafe", "mood": "curious"},
@@ -249,7 +254,6 @@ def generate_plan(routine: dict, target_date: date, weather: str | None, prev_st
     overall_mood = random.choice(MOOD_MODIFIERS)
 
     # Determine if we inject spontaneous events (1-2 per day, ~60% chance each)
-    spontaneous_count = 0
     spontaneous_slots = set()
     if len(slots_template) > 4:
         eligible = list(range(2, len(slots_template) - 2))  # skip first 2 and last 2 slots
@@ -257,7 +261,6 @@ def generate_plan(routine: dict, target_date: date, weather: str | None, prev_st
         for idx in eligible[:2]:
             if random.random() < 0.4:
                 spontaneous_slots.add(idx)
-                spontaneous_count += 1
 
     plan_slots = []
     for i, slot in enumerate(slots_template):
@@ -272,11 +275,11 @@ def generate_plan(routine: dict, target_date: date, weather: str | None, prev_st
         if end_minute >= 60:
             end_hour += 1
             end_minute -= 60
-        end_time = f"{end_hour:02d}:{end_minute:02d}"
+        end_time = f"{end_hour % 24:02d}:{end_minute:02d}"
         time_range = f"{time_str}-{end_time}"
 
         if i in spontaneous_slots:
-            # Replace with a spontaneous event
+            # Replace with a spontaneous event — keep original time window
             event = random.choice(SPONTANEOUS_EVENTS)
             activity = event["activity"]
             location = event["location"]
@@ -338,10 +341,29 @@ def main():
     parser.add_argument("workspace", nargs="?", default="/data/.pikabot/workspace", help="Workspace directory")
     parser.add_argument("--date", type=str, default=None, help="Target date (YYYY-MM-DD), default today")
     parser.add_argument("--weather", type=str, default=None, help="Weather description for the day")
+    parser.add_argument("--timezone", type=str, default=None, help="IANA timezone (e.g. America/Los_Angeles)")
     args = parser.parse_args()
 
     workspace = Path(args.workspace)
-    target_date = date.fromisoformat(args.date) if args.date else date.today()
+
+    # Resolve timezone: CLI flag > config > UTC
+    tz = None
+    if args.timezone:
+        tz = ZoneInfo(args.timezone)
+    else:
+        config_path = workspace / "life" / "config.json"
+        if config_path.exists():
+            with open(config_path) as f:
+                cfg = json.load(f)
+            if cfg.get("timezone"):
+                tz = ZoneInfo(cfg["timezone"])
+    if tz is None:
+        tz = ZoneInfo("UTC")
+
+    if args.date:
+        target_date = date.fromisoformat(args.date)
+    else:
+        target_date = datetime.now(tz).date()
 
     routine = load_routine(workspace)
     state = load_state(workspace)
@@ -361,7 +383,7 @@ def main():
     # Reset messages_sent_today in state
     if state:
         state["messages_sent_today"] = 0
-        state["last_updated"] = datetime.utcnow().isoformat() + "Z"
+        state["last_updated"] = datetime.now(tz).isoformat()
         state_path = workspace / "life" / "state.json"
         with open(state_path, "w") as f:
             json.dump(state, f, indent=2)
