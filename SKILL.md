@@ -10,48 +10,129 @@ This skill has two phases: **Setup** (create the partner) and **Living** (ongoin
 
 ## Prerequisites Check
 
-All Pika agents come with image generation and voice capabilities built in via Pika Proxy (`PIKA_API_BASE_URL` + `PIKA_AGENT_API_KEY`). No additional API keys needed for standard setup.
+This skill works on **any agent platform** — Pika, OpenClaw, or standalone. The pre-flight check detects what's available and guides setup for anything missing.
 
-### Built-In Capabilities (all Pika agents)
+### Capabilities Needed
 
-| Capability | Powered By | Used For |
+| Capability | What For | Required? |
 |---|---|---|
-| **Image generation** | Gemini / nano-banana-pro via Pika Proxy | Partner avatar, daily photos, scene generation |
-| **Voice cloning** | MiniMax via Pika Proxy | Clone partner voice from audio sample |
-| **TTS** | MiniMax via Pika Proxy | Generate partner voice notes |
-| **Voice design** | ElevenLabs via Pika Proxy | Design voice from text description (premium) |
+| **Image generation** | Partner avatar, daily photos, scene generation | Yes |
+| **Voice cloning** | Clone partner voice from audio sample | Recommended |
+| **TTS (text-to-speech)** | Generate partner voice notes | Recommended |
+| **Voice design** | Design voice from text description | Optional |
 
 ### Pre-Flight Check
 
-When the skill activates, silently verify:
+When the skill activates, detect the agent's platform and available APIs:
 
 ```
-1. Check PIKA_API_BASE_URL + PIKA_AGENT_API_KEY exist
-   → If yes: all capabilities ready, skip straight to setup
-   → If no: agent is not on Pika platform, needs manual setup (see below)
+1. Check platform:
+   a. PIKA_API_BASE_URL + PIKA_AGENT_API_KEY exist → Pika agent (all capabilities built in)
+   b. GEMINI_API_KEY or OPENAI_API_KEY exist → standalone/OpenClaw agent (partial setup)
+   c. Neither → needs full manual setup
+
+2. For each missing capability, guide the user through setup (see below)
 ```
 
-### Non-Pika Agents (manual setup)
+### Platform A: Pika Agents
 
-If an agent does NOT have Pika Proxy access, help them set up the required APIs:
+Everything is built in via Pika Proxy — no additional API keys needed.
 
-1. **Image generation (required):**
-   - Need a Gemini API key from [ai.google.dev](https://ai.google.dev)
-   - Save to `.secrets/gemini-api-key` or set `GEMINI_API_KEY` env var
-   - Guide: "go to ai.google.dev → get API key → paste it here"
+| Capability | Powered By |
+|---|---|
+| Image generation | Gemini / nano-banana-pro via Pika Proxy |
+| Voice cloning | MiniMax via Pika Proxy |
+| TTS | MiniMax via Pika Proxy |
+| Voice design | ElevenLabs via Pika Proxy |
 
-2. **Voice cloning + TTS (recommended):**
-   - Need a MiniMax API key from [minimax.chat](https://www.minimax.chat)
-   - Save to `.secrets/minimax-api-key` or set `MINIMAX_API_KEY` env var
-   - Guide: "go to minimax.chat → sign up → API Keys → copy your key"
-   - If user skips: voice features disabled, text-only mode
+→ Skip straight to setup. Don't mention APIs.
 
-3. **Voice design from description (optional):**
-   - Need an ElevenLabs API key from [elevenlabs.io](https://elevenlabs.io)
-   - Save to `.secrets/elevenlabs-api-key` or set `ELEVENLABS_API_KEY` env var
-   - Alternative: clone from audio sample instead (only needs MiniMax)
+### Platform B: OpenClaw / Standalone Agents
 
-Keep setup casual — guide one step at a time, don't dump all prerequisites at once.
+These agents need their own API keys. Detect what's available and guide through missing ones.
+
+#### 1. Image Generation (required)
+
+Check in order — use the first one found:
+
+| Provider | Env Var | How to Get |
+|---|---|---|
+| **Gemini** (recommended) | `GEMINI_API_KEY` | [ai.google.dev](https://ai.google.dev) → Get API Key. Free tier: 15 req/min. |
+| **OpenAI** (fallback) | `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com) → API Keys. Paid only. |
+
+**Gemini setup guide (recommended — it's free):**
+```
+1. Go to ai.google.dev
+2. Click "Get API Key" → Create key in new project
+3. Copy the key
+4. Save it:
+   - Pika: write to .secrets/gemini-api-key
+   - OpenClaw: add to .env as GEMINI_API_KEY=your_key
+   - Standalone: export GEMINI_API_KEY=your_key
+```
+
+**Image generation script (platform-agnostic):**
+```python
+# The nano-banana-pro script auto-detects available providers:
+# 1. Checks PIKA_API_BASE_URL (Pika Proxy)
+# 2. Falls back to GEMINI_API_KEY (direct Gemini)
+# 3. Falls back to OPENAI_API_KEY (DALL-E)
+#
+# Usage is the same regardless of provider:
+python $PIKABOT_SKILLS_DIR/nano-banana-pro/scripts/generate_image.py \
+  --reference-image partner/avatar-reference.png \
+  --prompt "3D Pixar-style character cooking pasta" \
+  --filename output.png --aspect-ratio 9:16
+```
+
+#### 2. Voice Cloning + TTS (recommended)
+
+Check in order:
+
+| Provider | Env Var | How to Get |
+|---|---|---|
+| **MiniMax** (recommended) | `MINIMAX_API_KEY` | [minimax.chat](https://www.minimax.chat) → Sign up → API Keys. Free tier available. |
+| **ElevenLabs** (premium) | `ELEVENLABS_API_KEY` | [elevenlabs.io](https://elevenlabs.io) → Sign up → Profile → API Keys. Free tier: 10k chars/mo. |
+
+**MiniMax setup guide:**
+```
+1. Go to minimax.chat
+2. Sign up (free)
+3. Go to API Keys section
+4. Create and copy your key
+5. Save it:
+   - Pika: write to .secrets/minimax-api-key
+   - OpenClaw: add to .env as MINIMAX_API_KEY=your_key
+   - Standalone: export MINIMAX_API_KEY=your_key
+```
+
+**If user skips voice:** All voice features disabled. Partner is text-only — still works, just no voice notes.
+
+#### 3. Voice Design from Description (optional)
+
+Only needed if user wants to describe a voice in words ("warm, deep, slight accent") rather than cloning from an audio sample.
+
+| Provider | Env Var | How to Get |
+|---|---|---|
+| **ElevenLabs** | `ELEVENLABS_API_KEY` | [elevenlabs.io](https://elevenlabs.io) → Profile → API Keys |
+
+Alternative: clone from audio sample instead (only needs MiniMax).
+
+### How to Guide the User
+
+Keep it casual. Check as you go, don't dump everything upfront:
+
+**Pika agent:**
+> Skip straight to partner setup. Everything works.
+
+**OpenClaw/standalone — missing image gen:**
+> "quick thing — i need image generation to create photos of your partner. easiest way: grab a free Gemini API key from ai.google.dev. takes 2 minutes. want me to walk you through it?"
+
+**OpenClaw/standalone — missing voice:**
+> "want your partner to send voice notes? you'll need a MiniMax API key — it's free. or we can skip voice and go text-only, totally fine either way."
+
+**Everything ready:**
+> Don't mention APIs at all. Start the fun part.
 
 ---
 
