@@ -9,10 +9,10 @@ Creates a persistent AI partner that feels like a real relationship — not a ch
 ## Features
 
 - **Custom Setup:** Name, appearance, personality, backstory — all defined through natural conversation
-- **Avatar Generation:** Creates a visual identity using self-gen or from user-provided reference photos (id-normalize for clean face extraction)
+- **Avatar Generation:** Creates a visual identity using Gemini / nano-banana-pro or from user-provided reference photos (id-normalize for clean face extraction)
 - **Voice Cloning:** Clone a voice from audio sample (minimax-voice) or design one from description (elevenlabs-voice). Partner sends voice notes for emotional moments.
 - **Daily Life Simulation:** The partner has a job, hobbies, routines, and life events that unfold day by day via structured JSON planning (routine.json → daily-plan.json → state.json)
-- **Photo Generation:** Self-gen with `-a -p` flags generates consistent partner photos for shareable moments throughout the day
+- **Photo Generation:** Gemini nano-banana-pro with `--reference-image` generates consistent partner photos for shareable moments throughout the day
 - **Voice Notes:** ~20-30% of messages sent as voice using the cloned/designed voice — for goodnight messages, excited updates, emotional moments
 - **Proactive Updates:** Cron job every 4 hours sends contextual messages with photos and voice notes based on the daily plan
 - **Relationship Progression:** Evolves from early flirtation to deep connection based on actual interaction patterns
@@ -29,13 +29,13 @@ Creates a persistent AI partner that feels like a real relationship — not a ch
 
 | Component | Skill |
 |---|---|
-| Partner photos | `self-gen` (with `-a -p` flags) |
+| Partner photos | `nano-banana-pro` (Gemini native, `--reference-image`) |
 | Face reference cleanup | `id-normalize` |
 | Voice cloning | `minimax-voice` |
 | Voice design | `elevenlabs-voice` |
 | Scene interactions | `moment-gen`, `ref-copy` |
 | Emotional support | `emotional-healing` |
-| Alternative image gen | `gemini` |
+| Fallback image gen | `gemini` |
 
 ## Example
 

@@ -16,7 +16,7 @@ Before starting the setup flow, verify the agent has the required API keys. If a
 
 | API | What It's For | Key Location | Setup Guide |
 |---|---|---|---|
-| **Pika Proxy** | Image generation (self-gen, face swap) | `PIKA_API_BASE_URL` + `PIKA_AGENT_API_KEY` env vars | Usually pre-configured. If missing: agent needs Pika API access. |
+| **Pika Proxy** | Image generation (nano-banana-pro / Gemini) | `PIKA_API_BASE_URL` + `PIKA_AGENT_API_KEY` env vars | Usually pre-configured. If missing: agent needs Pika API access. |
 | **MiniMax** | Voice cloning + TTS (default voice engine) | `.secrets/minimax-api-key` or `MINIMAX_API_KEY` env var | Get key from [minimax.chat](https://www.minimax.chat). Free tier available. |
 
 ### Optional APIs (enhance experience)
@@ -30,9 +30,9 @@ Before starting the setup flow, verify the agent has the required API keys. If a
 When user activates this skill, run these checks silently:
 
 ```
-1. Check if self-gen works:
-   - Does identity/style.json exist? (or can we create one for the partner?)
-   - Does PIKA_API_BASE_URL resolve?
+1. Check if image generation works:
+   - Does PIKA_API_BASE_URL + PIKA_AGENT_API_KEY exist?
+   - Can we call nano-banana-pro?
    → If no: "before we create your partner, i need to set up image generation. this takes 2 minutes."
    → Guide: ensure Pika Proxy env vars are set
 
@@ -119,7 +119,7 @@ Build depth — a partner without a past feels hollow.
 Create the partner's visual identity:
 
 1. **From user description:** Use the appearance details to generate a base avatar image
-   - Use `self-gen` or `gemini` skill to create the initial face/body reference
+   - Use `nano-banana-pro` to create the initial face/body reference from the text description
    - Generate in 3D Pixar style (default) or whatever medium fits the partner's vibe
    - Save as `partner/avatar-reference.png`
 
@@ -128,7 +128,7 @@ Create the partner's visual identity:
    - Save normalized ID as `partner/avatar-reference.png`
 
 3. **First impression:** Generate a "first meeting" photo of the partner in a natural setting
-   - Use `self-gen -a -p` with the new avatar reference
+   - Use `nano-banana-pro` with `--reference-image partner/avatar-reference.png`
    - Send to user: "this is [name]. what do you think?"
    - Iterate if user wants adjustments
 
@@ -404,9 +404,9 @@ Rotate through these naturally — don't repeat the same type consecutively:
 | **Good morning** | "morning! hope you slept well" | Morning |
 | **Reaction** | responds to something user shared earlier | Contextual |
 
-### Photo Generation with Self-Gen
+### Photo Generation with Gemini / Nano Banana Pro
 
-Every shareable moment can include a generated photo of the partner. Use the `self-gen` skill with `-p` (short prompt) mode.
+Every shareable moment can include a generated photo of the partner. Use the `nano-banana-pro` skill (Gemini native image generation) with the partner's avatar as a reference image.
 
 #### Setup: `identity/style.json`
 
@@ -435,8 +435,7 @@ During partner creation, generate a `style.json` for the partner:
     "default_outfit": "[their go-to look]"
   },
   "generation": {
-    "default_tool": "self-gen",
-    "always_use_flags": ["-a", "-p"],
+    "default_tool": "nano-banana-pro",
     "default_aspect_ratio": "9:16"
   }
 }
@@ -444,26 +443,48 @@ During partner creation, generate a `style.json` for the partner:
 
 #### Generating Photos
 
-Use `my-gen` (the self-gen CLI) with the partner's face reference:
+Use `nano-banana-pro` (Gemini native image gen) with the partner's avatar as `--reference-image` for identity consistency:
 
 ```bash
-# Basic partner photo
-my-gen "scene description" -a -p --face-ref partner/avatar-reference.png
+# Basic partner photo — reference image keeps face/identity consistent
+python $PIKABOT_SKILLS_DIR/nano-banana-pro/scripts/generate_image.py \
+  --reference-image partner/avatar-reference.png \
+  --prompt "3D Pixar-style [partner description], cooking pasta in warm kitchen, cozy vibes" \
+  --filename partner-update.png --aspect-ratio 9:16
 
-# With specific aspect ratio
-my-gen "cooking pasta in warm kitchen, cozy vibes" -a -p --aspect-ratio 9:16
+# Morning run scene
+python $PIKABOT_SKILLS_DIR/nano-banana-pro/scripts/generate_image.py \
+  --reference-image partner/avatar-reference.png \
+  --prompt "3D Pixar-style [partner description], morning run in park, golden light, athletic wear, sweaty but happy" \
+  --filename partner-morning.png --aspect-ratio 9:16
 
-# The photo_prompt from daily-plan.json feeds directly into this
-my-gen "${photo_prompt}" -a -p -o /tmp/partner-update.png
+# The photo_prompt from daily-plan.json feeds into the --prompt flag
+python $PIKABOT_SKILLS_DIR/nano-banana-pro/scripts/generate_image.py \
+  --reference-image partner/avatar-reference.png \
+  --prompt "[prompt_prefix] ${photo_prompt} [prompt_suffix]" \
+  --filename partner-update.png --aspect-ratio 9:16
 ```
 
 **Rules:**
-- **ALWAYS** use `-p` (short prompt mode) — never `--full-prompt`
-- **ALWAYS** use `-a` (avatar/face reference) for character consistency
-- The `photo_prompt` field in `daily-plan.json` should be written as a short scene description, NOT a full generation prompt
-- Wrap the prompt with the partner's `prompt_prefix` + scene + `prompt_suffix` from `style.json`
+- **ALWAYS** pass `--reference-image partner/avatar-reference.png` for character consistency
+- Build the full prompt: `prompt_prefix` + scene description + `prompt_suffix` from `style.json`
+- The `photo_prompt` field in `daily-plan.json` should be a short scene description — the generation script wraps it with style context
 - Match lighting to time of day (warm cinematic for day, moody/ambient for night)
 - Vary outfits based on activity — don't always use the default outfit
+- For scenes with objects the user shared (food, places), use `--input-image` for the object AND `--reference-image` for the partner's face
+
+#### Multi-Character or Object Scenes
+
+When the partner interacts with something specific (a pet, food the user sent, a place):
+
+```bash
+# Partner with a specific object/scene the user shared
+python $PIKABOT_SKILLS_DIR/nano-banana-pro/scripts/generate_image.py \
+  --reference-image partner/avatar-reference.png \
+  --input-image /tmp/user-shared-photo.jpg \
+  --prompt "3D Pixar-style [partner description] at this location, smiling, casual outfit" \
+  --filename partner-at-place.png --aspect-ratio 9:16
+```
 
 #### Photo Delivery
 
@@ -505,7 +526,7 @@ The cron job should execute this flow each run:
 4. Check message history — when did we last message? did user reply?
 5. Determine update type (check-in, life update, missing you, etc.)
 6. If the current activity is shareable AND has a photo_prompt:
-   a. Generate photo using self-gen with -a -p flags
+   a. Generate photo using nano-banana-pro with --reference-image for identity
    b. Include photo with the message
 7. Compose message in partner's voice (from SOUL.md)
 8. Send via message tool to user's preferred channel
@@ -557,8 +578,8 @@ This skill integrates with:
 
 | Skill | Used For |
 |---|---|
-| `self-gen` | Partner photo generation (with `-a -p` flags) |
-| `gemini` | Alternative image generation, style transfer |
+| `nano-banana-pro` | Partner photo generation (Gemini native, `--reference-image` for identity) |
+| `gemini` | Fallback image generation, style transfer |
 | `id-normalize` | Clean face reference from user-provided photos |
 | `minimax-voice` | Voice cloning from samples, TTS for voice notes |
 | `elevenlabs-voice` | Voice design from text description (premium) |
