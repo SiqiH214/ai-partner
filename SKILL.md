@@ -10,60 +10,48 @@ This skill has two phases: **Setup** (create the partner) and **Living** (ongoin
 
 ## Prerequisites Check
 
-Before starting the setup flow, verify the agent has the required API keys. If any are missing, guide the user through setup first.
+All Pika agents come with image generation and voice capabilities built in via Pika Proxy (`PIKA_API_BASE_URL` + `PIKA_AGENT_API_KEY`). No additional API keys needed for standard setup.
 
-### Required APIs
+### Built-In Capabilities (all Pika agents)
 
-| API | What It's For | Key Location | Setup Guide |
-|---|---|---|---|
-| **Pika Proxy** | Image generation (nano-banana-pro / Gemini) | `PIKA_API_BASE_URL` + `PIKA_AGENT_API_KEY` env vars | Usually pre-configured. If missing: agent needs Pika API access. |
-| **MiniMax** | Voice cloning + TTS (default voice engine) | `.secrets/minimax-api-key` or `MINIMAX_API_KEY` env var | Get key from [minimax.chat](https://www.minimax.chat). Free tier available. |
+| Capability | Powered By | Used For |
+|---|---|---|
+| **Image generation** | Gemini / nano-banana-pro via Pika Proxy | Partner avatar, daily photos, scene generation |
+| **Voice cloning** | MiniMax via Pika Proxy | Clone partner voice from audio sample |
+| **TTS** | MiniMax via Pika Proxy | Generate partner voice notes |
+| **Voice design** | ElevenLabs via Pika Proxy | Design voice from text description (premium) |
 
-### Optional APIs (enhance experience)
+### Pre-Flight Check
 
-| API | What It's For | Key Location | When Needed |
-|---|---|---|---|
-| **ElevenLabs** | Premium voice design from text description | `.secrets/elevenlabs-api-key` or `ELEVENLABS_API_KEY` env var | Only if user wants to design a voice from description instead of cloning |
-
-### Pre-Flight Check Flow
-
-When user activates this skill, run these checks silently:
+When the skill activates, silently verify:
 
 ```
-1. Check if image generation works:
-   - Does PIKA_API_BASE_URL + PIKA_AGENT_API_KEY exist?
-   - Can we call nano-banana-pro?
-   → If no: "before we create your partner, i need to set up image generation. this takes 2 minutes."
-   → Guide: ensure Pika Proxy env vars are set
-
-2. Check if voice works:
-   - Does .secrets/minimax-api-key exist?
-   - Can we call the MiniMax API?
-   → If no: "to give your partner a voice, i need a MiniMax API key."
-   → Guide: "go to minimax.chat → sign up → API Keys → copy your key"
-   → Save: write key to .secrets/minimax-api-key
-   → If user skips: voice features disabled, text-only mode
-
-3. (Optional) Check ElevenLabs:
-   - Only check if user wants voice design from description
-   - Does .secrets/elevenlabs-api-key exist?
-   → If no: "for custom voice design, i need an ElevenLabs key. or i can clone a voice from an audio sample instead (just needs MiniMax)."
-   → Guide: "go to elevenlabs.io → sign up → Profile → API Keys → copy"
-   → Save: write key to .secrets/elevenlabs-api-key
+1. Check PIKA_API_BASE_URL + PIKA_AGENT_API_KEY exist
+   → If yes: all capabilities ready, skip straight to setup
+   → If no: agent is not on Pika platform, needs manual setup (see below)
 ```
 
-### How to Guide the User
+### Non-Pika Agents (manual setup)
 
-Keep it casual and quick. Don't dump all prerequisites at once — check as you go:
+If an agent does NOT have Pika Proxy access, help them set up the required APIs:
 
-**If image gen is missing:**
-> "quick thing — i need to set up image generation so i can create photos of your partner. takes like 2 min. let me check what we need..."
+1. **Image generation (required):**
+   - Need a Gemini API key from [ai.google.dev](https://ai.google.dev)
+   - Save to `.secrets/gemini-api-key` or set `GEMINI_API_KEY` env var
+   - Guide: "go to ai.google.dev → get API key → paste it here"
 
-**If voice is missing:**
-> "want your partner to send voice notes? i'll need a MiniMax API key for that. it's free to sign up — go to minimax.chat and grab an API key. or we can skip voice and do text only, totally fine."
+2. **Voice cloning + TTS (recommended):**
+   - Need a MiniMax API key from [minimax.chat](https://www.minimax.chat)
+   - Save to `.secrets/minimax-api-key` or set `MINIMAX_API_KEY` env var
+   - Guide: "go to minimax.chat → sign up → API Keys → copy your key"
+   - If user skips: voice features disabled, text-only mode
 
-**If everything is ready:**
-> Skip straight to setup. Don't mention APIs at all.
+3. **Voice design from description (optional):**
+   - Need an ElevenLabs API key from [elevenlabs.io](https://elevenlabs.io)
+   - Save to `.secrets/elevenlabs-api-key` or set `ELEVENLABS_API_KEY` env var
+   - Alternative: clone from audio sample instead (only needs MiniMax)
+
+Keep setup casual — guide one step at a time, don't dump all prerequisites at once.
 
 ---
 
