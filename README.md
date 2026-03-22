@@ -62,6 +62,19 @@ Agent: [selfie at a coffee shop]
 Agent: just got back from the cafe. how's your day going?
 ```
 
+## Install This Skill
+
+This skill works with any agent — Pika or OpenClaw. Built by Siqi (Pika PM).
+
+**Pika Agent:** Everything just works. All multimodal APIs (image gen, voice clone, TTS) and skills are already built into every Pika agent out of the box. No setup needed.
+
+**OpenClaw Agent:** You'll need to bring your own API keys:
+- **Gemini API key** — for image generation (free tier available)
+- **MiniMax API key** — for voice cloning and TTS (free tier available)
+- Or swap in **ElevenLabs** if you prefer that for voice
+
+Feel free to fork this skill and make it your own.
+
 ## Safety
 
 - Respects user-defined boundaries
