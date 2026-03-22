@@ -28,7 +28,7 @@ When the skill activates, detect the agent's platform and available APIs:
 ```
 1. Check platform:
    a. PIKA_API_BASE_URL + PIKA_AGENT_API_KEY exist → Pika agent (all capabilities built in)
-   b. GEMINI_API_KEY or OPENAI_API_KEY exist → standalone/OpenClaw agent (partial setup)
+   b. GEMINI_API_KEY exists → standalone/OpenClaw agent (partial setup)
    c. Neither → needs full manual setup
 
 2. For each missing capability, guide the user through setup (see below)
@@ -58,7 +58,6 @@ Check in order — use the first one found:
 | Provider | Env Var | How to Get |
 |---|---|---|
 | **Gemini** (recommended) | `GEMINI_API_KEY` | [ai.google.dev](https://ai.google.dev) → Get API Key. Free tier: 15 req/min. |
-| **OpenAI** (fallback) | `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com) → API Keys. Paid only. |
 
 **Gemini setup guide (recommended — it's free):**
 ```
@@ -76,7 +75,7 @@ Check in order — use the first one found:
 # The nano-banana-pro script auto-detects available providers:
 # 1. Checks PIKA_API_BASE_URL (Pika Proxy)
 # 2. Falls back to GEMINI_API_KEY (direct Gemini)
-# 3. Falls back to OPENAI_API_KEY (DALL-E)
+# 3. Falls back to error if no provider found
 #
 # Usage is the same regardless of provider:
 python $PIKABOT_SKILLS_DIR/nano-banana-pro/scripts/generate_image.py \
