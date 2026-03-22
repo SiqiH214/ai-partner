@@ -137,35 +137,113 @@ def should_message_user(slot_index: int, total_slots: int, activity: str) -> tup
     return False, None
 
 
-def parse_slot(raw: str | dict) -> dict:
-    """Parse a slot from either pipe-delimited string or dict format."""
-    if isinstance(raw, dict):
+# Default locations/outfits based on activity keywords
+ACTIVITY_DEFAULTS = {
+    "sleep": {"location": "bedroom", "outfit": "pajamas", "mood": "peaceful"},
+    "wak": {"location": "bedroom", "outfit": "pajamas", "mood": "groggy"},
+    "coffee": {"location": "kitchen", "outfit": "casual home clothes", "mood": "waking up"},
+    "tea": {"location": "kitchen", "outfit": "casual home clothes", "mood": "calm"},
+    "morning": {"location": "home", "outfit": "casual home clothes", "mood": "neutral"},
+    "ready": {"location": "home", "outfit": "day outfit", "mood": "focused"},
+    "lunch": {"location": "restaurant", "outfit": "day outfit", "mood": "hungry"},
+    "brunch": {"location": "cafe", "outfit": "day outfit", "mood": "relaxed"},
+    "dinner": {"location": "restaurant", "outfit": "evening outfit", "mood": "social"},
+    "cook": {"location": "kitchen", "outfit": "casual home clothes", "mood": "creative"},
+    "work": {"location": "desk", "outfit": "day outfit", "mood": "focused"},
+    "errand": {"location": "around town", "outfit": "day outfit", "mood": "busy"},
+    "explor": {"location": "neighborhood", "outfit": "day outfit", "mood": "curious"},
+    "wind": {"location": "home", "outfit": "comfortable home clothes", "mood": "tired"},
+    "relax": {"location": "home", "outfit": "comfortable home clothes", "mood": "relaxed"},
+    "bed": {"location": "bedroom", "outfit": "pajamas", "mood": "sleepy"},
+    "lazy": {"location": "bed", "outfit": "pajamas", "mood": "cozy"},
+    "break": {"location": "home", "outfit": "casual home clothes", "mood": "chill"},
+    "going out": {"location": "out", "outfit": "going out outfit", "mood": "excited"},
+    "night": {"location": "home", "outfit": "comfortable home clothes", "mood": "mellow"},
+    "still up": {"location": "home", "outfit": "comfortable home clothes", "mood": "restless"},
+    "free": {"location": "wherever", "outfit": "day outfit", "mood": "open"},
+}
+
+
+def infer_slot_details(activity: str) -> dict:
+    """Infer location, outfit, mood from activity description."""
+    activity_lower = activity.lower()
+    for keyword, defaults in ACTIVITY_DEFAULTS.items():
+        if keyword in activity_lower:
+            return defaults.copy()
+    return {"location": "unknown", "outfit": "day outfit", "mood": "neutral"}
+
+
+def parse_slot(raw, time_key: str | None = None) -> dict:
+    """Parse a slot from various formats:
+    - dict with 'time' key: {"time": "09:00", "activity": ..., ...}
+    - pipe-delimited string: "07:00 | 1h | activity | location | outfit | mood"
+    - simple string (activity only, time provided separately): "waking up, checking phone"
+    """
+    if isinstance(raw, dict) and "time" in raw:
         return raw
-    # Pipe-delimited: "07:00 | 1h   | activity | location | outfit | mood"
-    parts = [p.strip() for p in raw.split("|")]
-    if len(parts) < 6:
-        parts.extend([""] * (6 - len(parts)))
-    time_str = parts[0]
-    # Parse duration: "1h" or "1.5h" or "3h"
-    dur_str = parts[1].replace("h", "").strip()
-    try:
-        duration = float(dur_str)
-    except ValueError:
-        duration = 2.0
+
+    if isinstance(raw, str) and "|" in raw:
+        parts = [p.strip() for p in raw.split("|")]
+        if len(parts) < 6:
+            parts.extend([""] * (6 - len(parts)))
+        time_str = parts[0]
+        dur_str = parts[1].replace("h", "").strip()
+        try:
+            duration = float(dur_str)
+        except ValueError:
+            duration = 2.0
+        return {
+            "time": time_str,
+            "duration_hours": duration,
+            "activity": parts[2],
+            "location": parts[3] or infer_slot_details(parts[2])["location"],
+            "outfit": parts[4] or infer_slot_details(parts[2])["outfit"],
+            "mood": parts[5] or infer_slot_details(parts[2])["mood"],
+        }
+
+    # Simple string: activity description with time_key provided
+    activity = str(raw)
+    defaults = infer_slot_details(activity)
     return {
-        "time": time_str,
-        "duration_hours": duration,
-        "activity": parts[2],
-        "location": parts[3],
-        "outfit": parts[4],
-        "mood": parts[5],
+        "time": time_key or "00:00",
+        "duration_hours": 2.0,
+        "activity": activity,
+        "location": defaults["location"],
+        "outfit": defaults["outfit"],
+        "mood": defaults["mood"],
     }
+
+
+def routine_to_slots(routine_data) -> list[dict]:
+    """Convert various routine formats to a list of slot dicts."""
+    if isinstance(routine_data, list):
+        return [parse_slot(s) for s in routine_data]
+    if isinstance(routine_data, dict):
+        # Dict format: {"09:00": "activity description", ...}
+        slots = []
+        times = sorted(routine_data.keys())
+        for i, time_key in enumerate(times):
+            slot = parse_slot(routine_data[time_key], time_key=time_key)
+            slot["time"] = time_key
+            # Calculate duration from gap to next slot
+            if i + 1 < len(times):
+                next_h = int(times[i + 1].split(":")[0])
+                cur_h = int(time_key.split(":")[0])
+                gap = next_h - cur_h
+                if gap <= 0:
+                    gap += 24
+                slot["duration_hours"] = min(gap, 4)  # cap at 4h
+            else:
+                slot["duration_hours"] = 2.0
+            slots.append(slot)
+        return slots
+    return []
 
 
 def generate_plan(routine: dict, target_date: date, weather: str | None, prev_state: dict | None) -> dict:
     day_type = get_day_type(target_date)
-    raw_slots = routine.get(day_type, routine.get("weekday", []))
-    slots_template = [parse_slot(s) for s in raw_slots]
+    raw_data = routine.get(day_type, routine.get("weekday", []))
+    slots_template = routine_to_slots(raw_data)
 
     # Pick an overall mood for the day
     overall_mood = random.choice(MOOD_MODIFIERS)
