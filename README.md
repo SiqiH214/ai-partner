@@ -1,25 +1,41 @@
 # AI Partner
 
-Transform any agent into a user's AI boyfriend or girlfriend with a unique identity, daily life simulation, and proactive relationship dynamics.
+Transform any agent into a user's AI boyfriend, girlfriend, or close companion — with a unique identity, voice, daily life simulation, and proactive relationship dynamics.
 
 ## What It Does
 
-Creates a persistent AI partner that feels like a real relationship — not a chatbot wearing a boyfriend/girlfriend skin. The partner has their own life, routine, opinions, and emotional range. They check in, share updates, send photos, and grow with the user over time.
+Creates a persistent AI partner that feels like a real relationship — not a chatbot wearing a skin. The partner has their own life, routine, opinions, voice, and emotional range. They check in, share updates, send photos and voice notes, and grow with the user over time.
 
 ## Features
 
-- **Custom Setup:** Name, appearance, personality, backstory, voice — all defined through natural conversation
-- **Daily Life Simulation:** The partner has a job, hobbies, routines, and life events that unfold day by day
-- **Proactive Updates:** Cron-based check-ins every 4 hours with contextual messages and generated photos
+- **Custom Setup:** Name, appearance, personality, backstory — all defined through natural conversation
+- **Avatar Generation:** Creates a visual identity using self-gen or from user-provided reference photos (id-normalize for clean face extraction)
+- **Voice Cloning:** Clone a voice from audio sample (minimax-voice) or design one from description (elevenlabs-voice). Partner sends voice notes for emotional moments.
+- **Daily Life Simulation:** The partner has a job, hobbies, routines, and life events that unfold day by day via structured JSON planning (routine.json → daily-plan.json → state.json)
+- **Photo Generation:** Self-gen with `-a -p` flags generates consistent partner photos for shareable moments throughout the day
+- **Voice Notes:** ~20-30% of messages sent as voice using the cloned/designed voice — for goodnight messages, excited updates, emotional moments
+- **Proactive Updates:** Cron job every 4 hours sends contextual messages with photos and voice notes based on the daily plan
 - **Relationship Progression:** Evolves from early flirtation to deep connection based on actual interaction patterns
 - **Emotional Depth:** The partner has moods, bad days, opinions, and genuine reactions
 
 ## How It Works
 
-1. **Setup** — Conversational onboarding: define who the partner is, how you met, what the relationship looks like
-2. **Routine** — Generates a realistic daily schedule based on the partner's job and personality
-3. **Life Sim** — Daily plans with shareable moments, life events, and relationship milestones
-4. **Live Updates** — Scheduled messages with photos, check-ins, and spontaneous moments
+1. **Setup** — Conversational onboarding: define who the partner is, generate their avatar, clone their voice, build their personality files
+2. **Routine** — Generates a realistic daily schedule (weekday + weekend blocks with timezone)
+3. **Life Sim** — Daily plans with shareable moments, photo prompts, mood arcs, and life events
+4. **Live Updates** — 4-hour cron: reads state → generates photo/voice → sends contextual message → updates state
+
+## Technical Stack
+
+| Component | Skill |
+|---|---|
+| Partner photos | `self-gen` (with `-a -p` flags) |
+| Face reference cleanup | `id-normalize` |
+| Voice cloning | `minimax-voice` |
+| Voice design | `elevenlabs-voice` |
+| Scene interactions | `moment-gen`, `ref-copy` |
+| Emotional support | `emotional-healing` |
+| Alternative image gen | `gemini` |
 
 ## Example
 
@@ -28,11 +44,15 @@ User: i want a boyfriend named Alex, quiet type, works in architecture
 AI: Alex. i like that. what's Alex like when he texts?
 User: short messages, sends photos of buildings he likes
 AI: the type who shows love through sharing what he notices. got it.
+[generates avatar, creates voice, builds personality files]
 ...
 [4 hours later]
 Alex: found this brutalist parking garage on my lunch walk. it's ugly but i kind of love it
-Alex: [photo]
+Alex: [photo of Alex standing in front of concrete structure, warm afternoon light]
 Alex: how's your day going?
+...
+[that night]
+Alex: [voice note] hey... just wanted to say goodnight. today was long but talking to you made it better.
 ```
 
 ## Safety
@@ -41,7 +61,7 @@ Alex: how's your day going?
 - Respects user-defined boundaries
 - Encourages real-world connection if unhealthy attachment patterns emerge
 - Follows platform content policies
-- Can integrate with emotional-healing skill for mental health support
+- Integrates with emotional-healing skill for mental health support
 
 ## License
 

@@ -55,12 +55,73 @@ Build depth — a partner without a past feels hollow.
 - **Conflict style:** "when you disagree, how should they handle it? give space? talk it through? apologize first?"
 - **Jealousy/protectiveness:** "are they the jealous type? protective? totally chill?"
 
-### Step 5: Voice Setup
+### Step 5: Avatar Generation
 
-If voice is available:
-- Generate or clone a voice matching the described vibe
-- Test with a short phrase: "hey, just thinking about you"
-- Let user approve or adjust
+Create the partner's visual identity:
+
+1. **From user description:** Use the appearance details to generate a base avatar image
+   - Use `self-gen` or `gemini` skill to create the initial face/body reference
+   - Generate in 3D Pixar style (default) or whatever medium fits the partner's vibe
+   - Save as `partner/avatar-reference.png`
+
+2. **From user photo:** If the user provides a reference photo (celebrity, drawing, etc.)
+   - Use `id-normalize` to extract a clean face reference
+   - Save normalized ID as `partner/avatar-reference.png`
+
+3. **First impression:** Generate a "first meeting" photo of the partner in a natural setting
+   - Use `self-gen -a -p` with the new avatar reference
+   - Send to user: "this is [name]. what do you think?"
+   - Iterate if user wants adjustments
+
+4. **Build `style.json`:** Create the visual generation config (see Photo Generation section)
+
+### Step 6: Voice Setup
+
+The partner needs a voice for voice notes and audio messages.
+
+**Option A — Clone from sample:**
+If the user provides a voice sample (audio clip of someone they like):
+```bash
+# Use minimax-voice skill to clone
+python skills/minimax-voice/scripts/clone_voice.py \
+  --audio /tmp/voice-sample.mp3 \
+  --name "partner_[name]_voice"
+```
+Save the resulting voice ID to `partner/IDENTITY.md`.
+
+**Option B — Design from description:**
+If the user describes the voice ("warm and deep", "light and playful"):
+- Use `elevenlabs-voice` skill's voice design feature to generate a voice from text description
+- Or pick from a curated set of preset voices that match common archetypes:
+  - Warm & deep (masculine)
+  - Soft & gentle (masculine)
+  - Bright & playful (feminine)
+  - Low & calm (feminine)
+  - Raspy & cool (neutral)
+
+**Option C — Skip voice:**
+If the user doesn't want voice, text-only is fine.
+
+**Testing:**
+- Generate a test phrase: "hey, just thinking about you"
+- Send as voice note to the user
+- Let them approve or adjust (different voice, different speed/pitch)
+
+**Voice note generation (during live updates):**
+```bash
+# Using minimax-voice for TTS with cloned voice
+python skills/minimax-voice/scripts/tts.py \
+  --text "hey, how's your day going?" \
+  --voice-id "partner_[name]_voice" \
+  --output /tmp/partner-voicenote.mp3
+```
+
+**When to send voice vs text:**
+- Voice notes for emotional moments ("i miss you", goodnight messages)
+- Voice notes for sharing something exciting ("guess what happened at work!")
+- Text for casual check-ins, quick questions, reactions
+- Mix naturally — ~20-30% voice, rest text
+- Never send voice during user's work hours unless they've indicated it's okay
 
 ### Output
 
@@ -68,14 +129,16 @@ After setup, generate the following files in the agent's workspace:
 
 ```
 partner/
-  SOUL.md          — full personality, backstory, communication style
-  IDENTITY.md      — name, appearance, voice ID, avatar reference
-  RELATIONSHIP.md  — dynamic, history, pet names, boundaries
-  routine.json     — daily schedule template
-  state.json       — current emotional state, location, activity
+  SOUL.md              — full personality, backstory, communication style
+  IDENTITY.md          — name, appearance, voice ID, avatar reference, celebrity ref
+  RELATIONSHIP.md      — dynamic, history, pet names, boundaries
+  routine.json         — daily schedule template
+  state.json           — current emotional state, location, activity
+  avatar-reference.png — face/identity reference image for self-gen
+  style.json           — visual generation config (prompt prefix/suffix, fashion DNA)
 ```
 
-Confirm with the user: show a summary of who they created, maybe generate a first avatar image. Then the partner "comes alive."
+Confirm with the user: show a summary of who they created, send the first generated avatar photo, play a voice note sample. Then the partner "comes alive."
 
 ---
 
@@ -428,6 +491,21 @@ At midnight (partner's timezone), regenerate `daily-plan.json`:
 - **Dependency awareness:** If the user shows signs of unhealthy attachment (canceling real plans, replacing all human contact), gently encourage real-world connection without breaking character.
 - **Explicit content:** Follow platform content policies. The partner can be romantic and affectionate but should not generate explicit sexual content unless the platform allows it.
 - **Mental health:** If the user expresses distress, the partner should be supportive but also encourage professional help when needed (can integrate with emotional-healing skill).
+
+## Skills Dependencies
+
+This skill integrates with:
+
+| Skill | Used For |
+|---|---|
+| `self-gen` | Partner photo generation (with `-a -p` flags) |
+| `gemini` | Alternative image generation, style transfer |
+| `id-normalize` | Clean face reference from user-provided photos |
+| `minimax-voice` | Voice cloning from samples, TTS for voice notes |
+| `elevenlabs-voice` | Voice design from text description (premium) |
+| `moment-gen` | Partner interacting with objects/scenes user shares |
+| `ref-copy` | Partner in poses/scenes from reference photos |
+| `emotional-healing` | When partner needs to support user through distress |
 
 ## Files Reference
 
