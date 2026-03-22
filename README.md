@@ -10,7 +10,7 @@ Creates a persistent AI partner that feels like a real relationship — not a ch
 
 - **Custom Setup:** Name, appearance, personality, backstory — all defined through natural conversation
 - **Avatar Generation:** Creates a visual identity using self-gen or nano-banana-pro, or from user-provided reference photos (id-normalize for clean face extraction)
-- **Voice Cloning:** Clone a voice from audio sample (minimax-voice) or design one from description (elevenlabs-voice). Partner sends voice notes for emotional moments.
+- **Voice Cloning:** Clone a voice from audio sample using MiniMax. Partner sends voice notes for emotional moments.
 - **Daily Life Simulation:** The partner has a job, hobbies, routines, and life events that unfold day by day via structured JSON planning (routine.json → daily-plan.json → state.json)
 - **Photo Generation:** Self-gen (`my-gen` with `-a -p`) for daily photos + nano-banana-pro for multi-image scenes (partner with user's objects/pets/places)
 - **Voice Notes:** ~20-30% of messages sent as voice using the cloned/designed voice — for goodnight messages, excited updates, emotional moments
@@ -33,7 +33,7 @@ Creates a persistent AI partner that feels like a real relationship — not a ch
 | Partner photos (advanced) | `nano-banana-pro` — multi-image scenes, object interactions |
 | Face reference cleanup | `id-normalize` |
 | Voice cloning | `minimax-voice` |
-| Voice design | `elevenlabs-voice` |
+| Voice cloning + TTS | `minimax-voice` |
 | Scene interactions | `moment-gen`, `ref-copy` |
 | Emotional support | `emotional-healing` |
 | Fallback image gen | `gemini` |

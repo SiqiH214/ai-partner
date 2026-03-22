@@ -19,7 +19,7 @@ This skill works on **any agent platform** — Pika, OpenClaw, or standalone. Th
 | **Image generation** | Partner avatar, daily photos, scene generation | Yes |
 | **Voice cloning** | Clone partner voice from audio sample | Recommended |
 | **TTS (text-to-speech)** | Generate partner voice notes | Recommended |
-| **Voice design** | Design voice from text description | Optional |
+| **Voice design** | Design voice from description (find matching sample → clone with MiniMax) | Optional |
 
 ### Pre-Flight Check
 
@@ -110,13 +110,11 @@ Check in order:
 
 #### 3. Voice Design from Description (optional)
 
-Only needed if user wants to describe a voice in words ("warm, deep, slight accent") rather than cloning from an audio sample.
-
-| Provider | Env Var | How to Get |
-|---|---|---|
-| **ElevenLabs** | `ELEVENLABS_API_KEY` | [elevenlabs.io](https://elevenlabs.io) → Profile → API Keys |
-
-Alternative: clone from audio sample instead (only needs MiniMax).
+If user wants to describe a voice in words ("warm, deep, slight accent") rather than providing an audio sample:
+- Find a matching voice sample online (YouTube, podcast clip) that fits the description
+- Download the audio clip
+- Clone it with MiniMax (same as Option A above)
+- This keeps everything on MiniMax — no additional API key needed
 
 ### How to Guide the User
 
@@ -219,13 +217,14 @@ Save the resulting voice ID to `partner/IDENTITY.md`.
 
 **Option B — Design from description:**
 If the user describes the voice ("warm and deep", "light and playful"):
-- Use `elevenlabs-voice` skill's voice design feature to generate a voice from text description
-- Or pick from a curated set of preset voices that match common archetypes:
+- Use MiniMax voice cloning with a short reference clip that matches the vibe
+- Or pick from MiniMax's preset voices that match common archetypes:
   - Warm & deep (masculine)
   - Soft & gentle (masculine)
   - Bright & playful (feminine)
   - Low & calm (feminine)
   - Raspy & cool (neutral)
+- Find a matching voice sample online (YouTube clip, podcast) → download → clone with MiniMax
 
 **Option C — Skip voice:**
 If the user doesn't want voice, text-only is fine.
@@ -742,7 +741,7 @@ This skill integrates with:
 | `gemini` | Fallback image generation |
 | `id-normalize` | Clean face reference from user-provided photos |
 | `minimax-voice` | Voice cloning from samples, TTS for voice notes |
-| `elevenlabs-voice` | Voice design from text description (premium) |
+| `minimax-voice` | Voice cloning + TTS (all voice features) |
 | `moment-gen` | Partner interacting with objects/scenes user shares |
 | `ref-copy` | Partner in poses/scenes from reference photos |
 | `emotional-healing` | When partner needs to support user through distress |
