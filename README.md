@@ -55,6 +55,18 @@ Alex: how's your day going?
 Alex: [voice note] hey... just wanted to say goodnight. today was long but talking to you made it better.
 ```
 
+## Prerequisites
+
+The skill checks for required API keys during setup and guides users through configuration if anything is missing:
+
+| API | Required? | What For |
+|---|---|---|
+| Pika Proxy | Yes | Image generation (partner photos via self-gen) |
+| MiniMax | Recommended | Voice cloning + TTS (partner voice notes) |
+| ElevenLabs | Optional | Voice design from text description (premium) |
+
+If APIs aren't configured, the skill walks users through setup conversationally — no technical knowledge needed.
+
 ## Safety
 
 - Partners must be 18+
