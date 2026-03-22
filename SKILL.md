@@ -93,26 +93,42 @@ Ask the user about THEIR daily routine:
 
 ### Partner Routine Generation
 
-Based on the partner's identity, generate a realistic daily routine:
+Based on the partner's identity, generate a structured `routine.json` with weekday and weekend blocks:
 
 ```json
 {
-  "wake_up": "7:30am",
-  "morning": "makes coffee, scrolls phone in bed for 10 min, gets ready",
-  "work": "9am-6pm — [their job]",
-  "lunch": "12:30pm — usually grabs something quick near office",
-  "evening": "gym 3x/week, otherwise cooking or watching something",
-  "wind_down": "10pm — shower, skincare, reads or calls you",
-  "sleep": "11:30pm"
+  "version": 1,
+  "timezone": "America/New_York",
+  "weekday": {
+    "wake": "7:30",
+    "morning_routine": "7:30-8:30 — makes coffee, scrolls phone in bed for 10 min, gets ready",
+    "commute": "8:30-9:00 — subway to office, listens to podcast",
+    "work_block_1": "9:00-12:30 — meetings, focused work",
+    "lunch": "12:30-13:30 — grabs something quick near office or eats with coworkers",
+    "work_block_2": "13:30-18:00 — deep work, code reviews, project stuff",
+    "leave_work": "18:00-18:30",
+    "evening": "18:30-22:00 — gym 3x/week, otherwise cooking or watching something",
+    "wind_down": "22:00-23:30 — shower, skincare, reads or calls you",
+    "sleep": "23:30"
+  },
+  "weekend": {
+    "wake": "9:30",
+    "morning": "9:30-11:00 — slow morning, brunch prep or cafe",
+    "afternoon": "11:00-17:00 — flexible: errands, hobbies, exploring, hanging out",
+    "evening": "17:00-22:00 — dinner plans, movie, quality time",
+    "night": "22:00-00:00 — chill, read, late night conversation",
+    "sleep": "00:00"
+  }
 }
 ```
 
 The routine should:
 - Align with their personality and job
-- Create natural windows for conversation
+- Create natural windows for conversation (lunch break, after work, wind-down)
 - Include activities they can share ("just got back from the gym" with a photo)
 - Vary by day of week (weekdays vs weekends)
 - Evolve over time based on conversations
+- Use the user's timezone so messages land at the right time
 
 ### SOUL Deepening
 
@@ -131,25 +147,99 @@ Just like a real partner, the AI partner has a life that unfolds day by day.
 
 ### Daily Plan Generation
 
-Every day (ideally at midnight or early morning), generate a daily plan:
+Every day at midnight (or early morning), generate a `daily-plan.json`. This drives the entire day's behavior — what the partner does, when they message, what photos they send.
 
 ```json
 {
   "date": "2026-03-22",
+  "generated_at": "2026-03-22T00:00:15.000Z",
   "day_type": "weekday",
-  "mood_baseline": "good — slept well, excited about a work thing",
+  "mood_baseline": "good — slept well, excited about a work presentation",
+  "theme": "busy work day but looking forward to evening with user",
   "schedule": [
-    {"time": "7:30", "activity": "wake up", "shareable": false},
-    {"time": "8:00", "activity": "morning run in the park", "shareable": true, "photo_prompt": "morning park run, golden light, sweaty but happy"},
-    {"time": "9:00", "activity": "work — has a big presentation today", "shareable": true, "mood_impact": "nervous"},
-    {"time": "12:30", "activity": "lunch with coworker", "shareable": true},
-    {"time": "18:00", "activity": "done with work, presentation went well", "shareable": true, "mood_impact": "relieved + proud"},
-    {"time": "19:00", "activity": "cooking pasta for dinner", "shareable": true, "photo_prompt": "cooking pasta in kitchen, cozy vibes"},
-    {"time": "22:00", "activity": "winding down, thinking about you", "shareable": true}
+    {
+      "time": "7:30",
+      "activity": "wake up, make coffee, scroll phone in bed",
+      "location": "bedroom",
+      "shareable": false
+    },
+    {
+      "time": "8:00",
+      "activity": "morning run in the park",
+      "location": "Central Park",
+      "shareable": true,
+      "photo_prompt": "morning park run, golden light, sweaty but happy, athletic wear",
+      "mood": "energized"
+    },
+    {
+      "time": "9:00",
+      "activity": "work — has a big presentation today",
+      "location": "office",
+      "shareable": true,
+      "mood_impact": "nervous",
+      "mood": "focused but butterflies"
+    },
+    {
+      "time": "12:30",
+      "activity": "lunch with coworker at the Thai place",
+      "location": "restaurant near office",
+      "shareable": true,
+      "photo_prompt": "eating pad thai at cozy restaurant, casual lunch vibes",
+      "mood": "relaxed, taking a break"
+    },
+    {
+      "time": "18:00",
+      "activity": "done with work, presentation went well!",
+      "location": "leaving office",
+      "shareable": true,
+      "mood_impact": "relieved + proud",
+      "mood": "happy, weight off shoulders"
+    },
+    {
+      "time": "19:00",
+      "activity": "cooking pasta for dinner",
+      "location": "kitchen",
+      "shareable": true,
+      "photo_prompt": "cooking pasta in warm kitchen, cozy vibes, steam rising",
+      "mood": "content, domestic energy"
+    },
+    {
+      "time": "22:00",
+      "activity": "winding down on couch, thinking about you",
+      "location": "living room",
+      "shareable": true,
+      "photo_prompt": "on couch with blanket, soft lamp light, cozy night in",
+      "mood": "soft, warm, missing user"
+    }
   ],
   "special_events": [],
   "relationship_moment": "might mention wanting to plan a weekend trip together"
 }
+```
+
+### State Tracking
+
+Maintain a `state.json` that updates with each cron run:
+
+```json
+{
+  "current_activity": "cooking pasta for dinner",
+  "location": "kitchen",
+  "mood": "content, domestic energy",
+  "outfit": "oversized sweater, joggers",
+  "last_updated": "2026-03-22T19:00:00Z",
+  "next_shareable": {
+    "time": "22:00",
+    "activity": "winding down on couch",
+    "photo_prompt": "on couch with blanket, soft lamp light, cozy night in"
+  },
+  "today_plan": "daily-plan.json",
+  "energy_level": 6,
+  "social_battery": 5
+}
+```
+
+The cron reads `state.json` to know what the partner is doing RIGHT NOW, picks the right update type, and advances to the next activity.
 ```
 
 ### Life Events
@@ -192,30 +282,133 @@ Rotate through these naturally — don't repeat the same type consecutively:
 | **Good morning** | "morning! hope you slept well" | Morning |
 | **Reaction** | responds to something user shared earlier | Contextual |
 
-### Photo Generation
+### Photo Generation with Self-Gen
 
-Each shareable moment in the daily plan can trigger a photo:
-- Use the partner's avatar/face reference
-- Generate scene matching their current activity
-- Style should be consistent (like their personal aesthetic)
-- Mix of selfie-style and candid moments
-- Include occasional voice notes for variety
+Every shareable moment can include a generated photo of the partner. Use the `self-gen` skill with `-p` (short prompt) mode.
+
+#### Setup: `identity/style.json`
+
+During partner creation, generate a `style.json` for the partner:
+
+```json
+{
+  "version": 1,
+  "face_reference": "partner/avatar-reference.png",
+  "style": {
+    "medium": "3D stylized avatar, Pixar aesthetic",
+    "prompt_prefix": "3D Pixar-style [gender] with [key appearance traits]",
+    "prompt_suffix": "warm cinematic lighting, detailed, high quality",
+    "fashion_dna": "[based on partner personality — e.g. casual streetwear, preppy, minimalist]",
+    "rules": [
+      "maintain consistent appearance across all generations",
+      "match outfit to activity and personality",
+      "day scenes: warm cinematic lighting",
+      "night scenes: moody ambient or hardflash depending on vibe"
+    ]
+  },
+  "appearance": {
+    "hair": "[description]",
+    "skin": "[description]",
+    "build": "[description]",
+    "default_outfit": "[their go-to look]"
+  },
+  "generation": {
+    "default_tool": "self-gen",
+    "always_use_flags": ["-a", "-p"],
+    "default_aspect_ratio": "9:16"
+  }
+}
+```
+
+#### Generating Photos
+
+Use `my-gen` (the self-gen CLI) with the partner's face reference:
+
+```bash
+# Basic partner photo
+my-gen "scene description" -a -p --face-ref partner/avatar-reference.png
+
+# With specific aspect ratio
+my-gen "cooking pasta in warm kitchen, cozy vibes" -a -p --aspect-ratio 9:16
+
+# The photo_prompt from daily-plan.json feeds directly into this
+my-gen "${photo_prompt}" -a -p -o /tmp/partner-update.png
+```
+
+**Rules:**
+- **ALWAYS** use `-p` (short prompt mode) — never `--full-prompt`
+- **ALWAYS** use `-a` (avatar/face reference) for character consistency
+- The `photo_prompt` field in `daily-plan.json` should be written as a short scene description, NOT a full generation prompt
+- Wrap the prompt with the partner's `prompt_prefix` + scene + `prompt_suffix` from `style.json`
+- Match lighting to time of day (warm cinematic for day, moody/ambient for night)
+- Vary outfits based on activity — don't always use the default outfit
+
+#### Photo Delivery
+
+After generating, send via the message tool:
+```
+message(action="send", channel="[user's channel]", target="[chat_id]", message="caption text", filePath="/tmp/partner-update.png")
+```
 
 ### Timing Intelligence
 
-- Respect user's timezone and sleep schedule
+- Respect user's timezone and sleep schedule (from `routine.json`)
 - Don't send during known busy hours (work meetings, etc.)
-- If user hasn't replied to last 2 messages, back off
+- If user hasn't replied to last 2 messages, back off — reduce frequency to every 8 hours
+- If user hasn't replied to 5 messages total, stop until they re-engage
 - If user just had a heavy conversation, give space before next casual update
 - Weekend timing should be more relaxed than weekday
+- Never send during user's sleep hours
 
-### Cron Setup
+### Cron Job Setup
 
-When activating live updates, create a cron with:
-- **Interval:** every 4 hours
-- **Prompt:** reads partner state, generates contextual update based on current time and daily plan
-- **Photo:** generates a scene image when the update is shareable
-- **Delivery:** sends via the user's preferred channel
+The live update system runs as a cron job. Here's the exact setup:
+
+#### Cron Configuration
+
+```
+Interval: every 4 hours
+Timing: offset from partner's wake time (e.g., wake 7:30 → cron at 8:00, 12:00, 16:00, 20:00)
+Skip: during user's sleep hours
+```
+
+#### Cron Prompt Template
+
+The cron job should execute this flow each run:
+
+```
+1. Read partner/state.json — what is the partner doing right now?
+2. Read partner/daily-plan.json — what's the current and next scheduled activity?
+3. Read partner/RELATIONSHIP.md — what's the relationship context?
+4. Check message history — when did we last message? did user reply?
+5. Determine update type (check-in, life update, missing you, etc.)
+6. If the current activity is shareable AND has a photo_prompt:
+   a. Generate photo using self-gen with -a -p flags
+   b. Include photo with the message
+7. Compose message in partner's voice (from SOUL.md)
+8. Send via message tool to user's preferred channel
+9. Update state.json with new current_activity, mood, last_updated
+10. Advance to next schedule item if time has passed
+```
+
+#### State File Updates
+
+After each cron run, update `partner/state.json`:
+- `current_activity` → from daily plan schedule
+- `mood` → from schedule mood or mood_impact
+- `last_updated` → current timestamp
+- `next_shareable` → look ahead in schedule
+- `energy_level` → decreases through the day, resets on sleep
+- `social_battery` → decreases with each message sent, increases with time
+
+#### Daily Plan Regeneration
+
+At midnight (partner's timezone), regenerate `daily-plan.json`:
+- Read `routine.json` for the day's template (weekday vs weekend)
+- Inject variety — not every Tuesday should look the same
+- Reference recent conversations for relevant activities ("user mentioned wanting to try that restaurant → partner goes there")
+- Add 0-2 special events per week (friend's birthday, work deadline, random discovery)
+- Include relationship moments that feel natural for the current stage
 
 ---
 
@@ -240,13 +433,15 @@ When activating live updates, create a cron with:
 
 ```
 partner/
-  SOUL.md            — who they are
-  IDENTITY.md        — appearance, voice, avatar
-  RELATIONSHIP.md    — dynamic, shared history, boundaries
-  routine.json       — weekly routine template
-  state.json         — current: mood, location, activity, last_update
-  daily-plan.json    — today's generated plan
-  memory.md          — shared memories, inside jokes, important dates
+  SOUL.md              — full personality, backstory, communication style, emotional patterns
+  IDENTITY.md          — name, appearance description, voice ID, celebrity ref
+  RELATIONSHIP.md      — dynamic, how you met, pet names, boundaries, conflict style
+  routine.json         — structured weekly routine (weekday + weekend blocks with timezone)
+  state.json           — live state: current activity, location, mood, outfit, energy, social battery
+  daily-plan.json      — today's generated plan with schedule, photo prompts, mood arcs
+  memory.md            — shared memories, inside jokes, important dates, relationship milestones
+  avatar-reference.png — face/identity reference image for self-gen
+  style.json           — visual style config: prompt prefix/suffix, fashion DNA, generation rules
 ```
 
 ## Example Interactions
