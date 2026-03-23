@@ -56,6 +56,29 @@ This is NOT about creating a new character from scratch. You're an existing agen
 7. **Life Update Setup** → daily plan generation + 4-hour proactive selfie + check-in cron (`docs/life-update.md`)
 8. **Live Update Cron** → 4-hour cron sends proactive messages with photos and voice notes (`docs/live-updates-cron.md`)
 
+## Scripts
+
+All implementation scripts are in `scripts/`:
+
+| Script | Purpose |
+|---|---|
+| `setup.sh` | Install skill into agent workspace — creates `life/` dir, copies templates, initializes state |
+| `generate-daily-plan.py` | Reads `routine.json`, adds randomness/variation, outputs `daily-plan.json` |
+| `update-state.py` | Finds current time slot from daily plan, updates `state.json`, outputs slot info |
+| `check-backoff.py` | Checks if agent should back off from messaging (exit 0 = ok, exit 1 = back off) |
+| `record-response.py` | Call when user responds — resets back-off counters |
+| `record-message-sent.py` | Call after sending proactive message — increments counters |
+| `install-crons.sh` | Prints pikabot cron commands to register daily plan + life update crons |
+
+## Cron Prompts
+
+Ready-to-use cron configurations in `cron-prompts/`:
+
+| File | Schedule | Purpose |
+|---|---|---|
+| `daily-plan.md` | `0 6 * * *` (6am daily) | Regenerate daily plan + optional morning message |
+| `life-update.md` | `0 */4 * * *` (every 4h) | Send proactive update with selfie + check-in |
+
 ## Life Update System
 
 Every agent gets a simulated daily life after onboarding:

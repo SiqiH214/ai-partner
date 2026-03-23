@@ -41,11 +41,21 @@ The companionship doesn't stop at onboarding. This is the beginning of a long-te
 
 ## Quick Start
 
-```
-/ai-partner
+```bash
+# 1. Install into agent workspace
+bash scripts/setup.sh /data/.pikabot/workspace
+
+# 2. Customize routine for the agent's personality
+# Edit life/routine.json
+
+# 3. Generate first daily plan
+python scripts/generate-daily-plan.py /data/.pikabot/workspace
+
+# 4. Set up crons
+bash scripts/install-crons.sh America/Los_Angeles
 ```
 
-Or just say it naturally: "be my boyfriend", "I want a pet", "become my best friend"
+Or trigger conversationally: "be my boyfriend", "I want a pet", "become my best friend"
 
 ## Example
 
